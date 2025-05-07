@@ -1,150 +1,279 @@
 "use client";
 
+import { useState, useCallback, useEffect } from "react";
 import type React from "react";
-
-import { useState } from "react";
 import { Flag, Bomb } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function MinesweeperBoard() {
-  // In a real implementation, this would be populated with actual game data
-  const boardSize = 16;
-  const [revealed, setRevealed] = useState<boolean[][]>(
-    Array(boardSize)
-      .fill(null)
-      .map(() => Array(boardSize).fill(false))
+interface Cell {
+  mine: boolean;
+  revealed: boolean;
+  flagged: boolean;
+  count: number;
+}
+type Board = Cell[][];
+type Status = "init" | "playing" | "lost" | "won";
+
+export interface MinesweeperBoardProps {
+  onStatusChange?: (s: "init" | "playing" | "lost" | "won") => void;
+  onFlagChange?: (count: number) => void;
+  onReset?: () => void;
+  /* varsa başka prop'lar */
+}
+
+const SIZE = 16;
+const MINES = 40;
+const DIRS = [-1, 0, 1];
+
+const emptyBoard = (): Board =>
+  Array.from({ length: SIZE }, () =>
+    Array.from({ length: SIZE }, () => ({
+      mine: false,
+      revealed: false,
+      flagged: false,
+      count: 0,
+    }))
   );
-  const [flagged, setFlagged] = useState<boolean[][]>(
-    Array(boardSize)
-      .fill(null)
-      .map(() => Array(boardSize).fill(false))
+
+/* güvenli üretim (ilk tık) */
+function generateBoard(firstR: number, firstC: number): Board {
+  const board = emptyBoard();
+  const forbidden = new Set<string>();
+  DIRS.forEach((dr) =>
+    DIRS.forEach((dc) => {
+      const r = firstR + dr,
+        c = firstC + dc;
+      if (r >= 0 && r < SIZE && c >= 0 && c < SIZE) forbidden.add(`${r},${c}`);
+    })
   );
 
-  // Sample data for demonstration
-  const mines = new Set([
-    "2,3",
-    "5,7",
-    "8,2",
-    "10,10",
-    "12,4",
-    "3,15",
-    "7,9",
-    "14,6",
-    "1,8",
-    "9,13",
-  ]);
-  type CellKey = `${number},${number}`;
+  let placed = 0;
+  while (placed < MINES) {
+    const r = Math.floor(Math.random() * SIZE);
+    const c = Math.floor(Math.random() * SIZE);
+    if (forbidden.has(`${r},${c}`) || board[r][c].mine) continue;
+    board[r][c].mine = true;
+    placed++;
+  }
 
-  const numbers: Record<CellKey, number> = {
-    "1,3": 1,
-    "2,2": 1,
-    "2,4": 2,
-    "3,3": 2,
-    "3,4": 1,
-    "4,7": 1,
-    "5,6": 1,
-    "5,8": 1,
-    "6,7": 1,
-    "7,2": 1,
-    "8,1": 1,
-    "8,3": 1,
-    "9,2": 1,
-    "9,10": 1,
-    "10,9": 1,
-    "10,11": 1,
-    "11,10": 1,
-    "11,4": 1,
-    "12,3": 1,
-    "12,5": 1,
-    "13,4": 1,
-  };
-
-  const handleCellClick = (row: number, col: number) => {
-    if (flagged[row][col]) return;
-
-    const newRevealed = [...revealed];
-    newRevealed[row][col] = true;
-    setRevealed(newRevealed);
-  };
-
-  const handleRightClick = (e: React.MouseEvent, row: number, col: number) => {
-    e.preventDefault();
-    if (revealed[row][col]) return;
-
-    const newFlagged = [...flagged];
-    newFlagged[row][col] = !newFlagged[row][col];
-    setFlagged(newFlagged);
-  };
-
-  const getCellContent = (row: number, col: number) => {
-    const key = `${row},${col}`;
-
-    if (!revealed[row][col]) {
-      if (flagged[row][col]) {
-        return <Flag className="h-4 w-4 text-red-500" />;
-      }
-      return null;
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      if (board[r][c].mine) continue;
+      let cnt = 0;
+      DIRS.forEach((dr) =>
+        DIRS.forEach((dc) => {
+          if (!dr && !dc) return;
+          const nr = r + dr,
+            nc = c + dc;
+          if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) return;
+          if (board[nr][nc].mine) cnt++;
+        })
+      );
+      board[r][c].count = cnt;
     }
+  }
 
-    if (mines.has(key)) {
-      return <Bomb className="h-4 w-4" />;
-    }
+  return board;
+}
 
-    if (numbers[key]) {
-      const colorClasses = {
-        1: "text-blue-500",
-        2: "text-green-600",
-        3: "text-red-500",
-        4: "text-purple-600",
-        5: "text-yellow-600",
-        6: "text-cyan-600",
-        7: "text-black",
-        8: "text-gray-600",
-      };
+/* ---------- React bileşeni ------------------- */
+export function MinesweeperBoard({
+  onStatusChange,
+  onFlagChange,
+  onReset,
+}: MinesweeperBoardProps) {
+  /* ---------- state ---------------- */
+  const [board, setBoard] = useState<Board>(emptyBoard);
+  const [status, setStatus] = useState<Status>("init");
 
-      return (
-        <span
-          className={cn(
-            "font-bold",
-            colorClasses[numbers[key] as keyof typeof colorClasses]
-          )}
-        >
-          {numbers[key]}
-        </span>
+  /* her durum değiştiğinde parent'a bildir */
+  useEffect(() => {
+    onStatusChange?.(status);
+  }, [status, onStatusChange]);
+
+  /* flood‑fill */
+  const revealEmpty = useCallback((r: number, c: number, b: Board) => {
+    const stack = [[r, c]];
+    while (stack.length) {
+      const [x, y] = stack.pop()!;
+      DIRS.forEach((dx) =>
+        DIRS.forEach((dy) => {
+          if (!dx && !dy) return;
+          const nx = x + dx,
+            ny = y + dy;
+          if (nx < 0 || nx >= SIZE || ny < 0 || ny >= SIZE) return;
+          const cell = b[nx][ny];
+          if (cell.revealed || cell.flagged) return;
+          cell.revealed = true;
+          if (cell.count === 0 && !cell.mine) stack.push([nx, ny]);
+        })
       );
     }
+  }, []);
 
-    return null;
+  /* komşu bayrak sayısı */
+  const countFlags = (r: number, c: number, b: Board) => {
+    let n = 0;
+    DIRS.forEach((dr) =>
+      DIRS.forEach((dc) => {
+        if (!dr && !dc) return;
+        const nr = r + dr,
+          nc = c + dc;
+        if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) return;
+        if (b[nr][nc].flagged) n++;
+      })
+    );
+    return n;
+  };
+  // toplam bayrak sayısını hesapla
+
+  /* komşu hücreleri aç (chord) */
+  const chord = (r: number, c: number, b: Board, loseCallback: () => void) => {
+    DIRS.forEach((dr) =>
+      DIRS.forEach((dc) => {
+        if (!dr && !dc) return;
+        const nr = r + dr,
+          nc = c + dc;
+        if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) return;
+        const cell = b[nr][nc];
+        if (cell.revealed || cell.flagged) return;
+
+        cell.revealed = true;
+        if (cell.mine) {
+          // yanlış bayrak → kaybet
+          b.forEach((row) => row.forEach((c) => (c.revealed = true)));
+          loseCallback();
+          return;
+        }
+        if (cell.count === 0) revealEmpty(nr, nc, b);
+      })
+    );
   };
 
-  return (
-    <div className="grid grid-cols-16 gap-0.5 border-2 border-primary max-w-[640px] mx-auto">
-      {Array(boardSize)
-        .fill(null)
-        .map((_, rowIndex) =>
-          Array(boardSize)
-            .fill(null)
-            .map((_, colIndex) => {
-              const isRevealed = revealed[rowIndex][colIndex];
+  /* sol tık */
+  const leftClick = (r: number, c: number) => {
+    if (status === "lost" || status === "won") return;
 
-              return (
-                <button
-                  key={`${rowIndex}-${colIndex}`}
-                  className={cn(
-                    "aspect-square flex items-center justify-center text-sm font-medium",
-                    "focus:outline-none",
-                    isRevealed
-                      ? "bg-muted"
-                      : "bg-background hover:bg-muted/50 border border-border"
-                  )}
-                  onClick={() => handleCellClick(rowIndex, colIndex)}
-                  onContextMenu={(e) => handleRightClick(e, rowIndex, colIndex)}
-                >
-                  {getCellContent(rowIndex, colIndex)}
-                </button>
-              );
-            })
+    // ilk tık
+    if (status === "init") {
+      const b = generateBoard(r, c);
+      b[r][c].revealed = true;
+      if (b[r][c].count === 0) revealEmpty(r, c, b);
+      setBoard(b);
+      setStatus("playing");
+      return;
+    }
+
+    setBoard((prev) => {
+      const b = prev.map((row) => row.map((cell) => ({ ...cell })));
+      const cell = b[r][c];
+
+      // Chord: hücre zaten açık ve rakam ise
+      if (cell.revealed && cell.count > 0) {
+        if (countFlags(r, c, b) === cell.count) {
+          chord(r, c, b, () => setStatus("lost"));
+        }
+      } else {
+        if (cell.flagged || cell.revealed) return prev;
+
+        cell.revealed = true;
+        if (cell.mine) {
+          b.forEach((row) => row.forEach((c) => (c.revealed = true)));
+          setStatus("lost");
+          return b;
+        }
+        if (cell.count === 0) revealEmpty(r, c, b);
+      }
+
+      const hidden = b.flat().filter((c) => !c.revealed).length;
+      if (hidden === MINES) setStatus("won");
+      return b;
+    });
+  };
+
+  /* sağ tık */
+  const rightClick = (e: React.MouseEvent, r: number, c: number) => {
+    e.preventDefault();
+    if (status !== "playing") return;
+    setBoard((prev) => {
+      const b = prev.map((row) => row.map((cell) => ({ ...cell })));
+      const cell = b[r][c];
+      if (cell.revealed) return prev;
+      cell.flagged = !cell.flagged;
+      // toplam bayrak sayısını hesapla
+      const flags = b.flat().filter((c) => c.flagged).length;
+      onFlagChange?.(flags);
+      return b;
+    });
+  };
+
+  /* reset */
+  const reset = () => {
+    setBoard(emptyBoard());
+    setStatus("init");
+    onReset?.();
+  };
+
+  /* renkler */
+  const colors: Record<number, string> = {
+    1: "text-blue-800",
+    2: "text-green-800",
+    3: "text-red-800",
+    4: "text-purple-800",
+    5: "text-yellow-800",
+    6: "text-cyan-800",
+    7: "text-slate-900",
+    8: "text-slate-900",
+  };
+
+  /* render */
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between max-w-[640px] mx-auto">
+        <span className="font-semibold">
+          {status === "init" && "First click is safe!"}
+          {status === "playing" && "Good luck!"}
+          {status === "lost" && "💥 Boom! Try again?"}
+          {status === "won" && "🏆 You cleared the field!"}
+        </span>
+        <button
+          onClick={reset}
+          className="rounded bg-primary px-3 py-1 text-sm font-medium"
+        >
+          Restart
+        </button>
+      </div>
+
+      <div className="grid grid-cols-16 gap-0.5 border-2 border-primary max-w-[640px] mx-auto">
+        {board.map((row, r) =>
+          row.map((cell, c) => (
+            <button
+              key={`${r}-${c}`}
+              onClick={() => leftClick(r, c)}
+              onContextMenu={(e) => rightClick(e, r, c)}
+              className={cn(
+                "aspect-square flex items-center justify-center text-sm font-medium",
+                "focus:outline-none select-none",
+                cell.revealed
+                  ? "bg-[#D1CFEA] text-slate-900"
+                  : "bg-[#FFAC9D] hover:bg-[#FF9D8B] border border-[#FF8D7A]"
+              )}
+            >
+              {cell.revealed ? (
+                cell.mine ? (
+                  <Bomb className="h-4 w-4 text-slate-900" />
+                ) : cell.count ? (
+                  <span className={cn("font-bold", colors[cell.count])}>
+                    {cell.count}
+                  </span>
+                ) : null
+              ) : cell.flagged ? (
+                <Flag className="h-4 w-4 text-[#E8322C]" />
+              ) : null}
+            </button>
+          ))
         )}
+      </div>
     </div>
   );
 }

@@ -18,6 +18,16 @@ interface GameCardProps {
   players: number;
   path: string;
 }
+import Image from "next/image";
+import image from "next/image";
+import { title } from "process";
+<Image
+  src={image}
+  alt={title}
+  width={400}
+  height={200}
+  className="h-full w-full object-cover"
+/>;
 
 export default function GameCard({
   title,

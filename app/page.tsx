@@ -68,7 +68,7 @@ export default function HomePage() {
                 <GameCard
                   title="Sudoku"
                   description="Test your logical thinking with this number puzzle game"
-                  image="/img/sudoku.jpg"
+                  image="public/img/sudoku.jpg"
                   players={342}
                   path="/games/sudoku"
                 />
