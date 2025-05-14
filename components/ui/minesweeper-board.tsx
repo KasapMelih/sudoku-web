@@ -228,8 +228,8 @@ export function MinesweeperBoard({
 
   /* render */
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between max-w-[640px] mx-auto">
+    <div className="space-y-4 flex flex-col items-center">
+      <div className="flex items-center justify-between max-w-[640px] w-full">
         <span className="font-semibold">
           {status === "init" && "First click is safe!"}
           {status === "playing" && "Good luck!"}
@@ -244,7 +244,7 @@ export function MinesweeperBoard({
         </button>
       </div>
 
-      <div className="grid grid-cols-16 gap-0.5 border-2 border-primary max-w-[640px] mx-auto">
+      <div className="grid grid-cols-16 gap-0.5 border-2 border-primary max-w-[640px] w-full">
         {board.map((row, r) =>
           row.map((cell, c) => (
             <button

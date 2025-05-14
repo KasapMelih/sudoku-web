@@ -67,20 +67,38 @@ export default function MinesweeperGameClient() {
       </header>
 
       <main className="flex-1 container py-6">
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* Oyun tahtası */}
-          <MinesweeperBoard
-            onStatusChange={setStatus}
-            onFlagChange={setFlags}
-            onReset={handleReset}
-          />
-
+        <div className="grid gap-6 md:grid-cols-12">
           {/* Yan panel */}
-          <Card className="md:col-span-2">
-            <CardContent className="pt-6">
-              {/* istediğin açıklamalar */}
+          <Card className="md:col-span-3">
+            <CardContent className="pt-6 space-y-2">
+              <h2 className="text-2xl font-bold">🕹️ Nasıl Oynanır?</h2>
+              <ul className="instruction-list">
+                <li>
+                  <strong>Sol Tık 🖱️</strong> → Hücreyi aç
+                </li>
+                <li>
+                  <strong>Sağ Tık 🚩</strong> → Hücreyi bayrakla (mayın işareti)
+                </li>
+                <li>
+                  <strong>İkili Tık (Chord Click) 🔄</strong> → Sayı açılmışsa,
+                  çevresindeki hücreleri otomatik aç
+                </li>
+              </ul>
+              <p className="tip">
+                🧠 <strong>İpucu:</strong> Sayılar, çevresindeki mayın sayısını
+                gösterir. Stratejik düşün!
+              </p>
             </CardContent>
           </Card>
+
+          {/* Oyun tahtası */}
+          <div className="md:col-span-9">
+            <MinesweeperBoard
+              onStatusChange={setStatus}
+              onFlagChange={setFlags}
+              onReset={handleReset}
+            />
+          </div>
         </div>
       </main>
     </div>
