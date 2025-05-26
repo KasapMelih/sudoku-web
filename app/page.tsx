@@ -50,7 +50,7 @@ export default function HomePage() {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 rounded-lg bg-muted px-3 py-1">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">1,245 online</span>
+                <span className="text-sm font-medium">0 online</span>
               </div>
               <Button>Find Match</Button>
             </div>
@@ -69,76 +69,37 @@ export default function HomePage() {
                   title="Sudoku"
                   description="Test your logical thinking with this number puzzle game"
                   image="public/img/sudoku.jpg"
-                  players={342}
+                  players={0}
                   path="/games/sudoku"
                 />
                 <GameCard
                   title="Minesweeper"
                   description="Clear the minefield without detonating any mines"
                   image="/placeholder.svg?height=200&width=400"
-                  players={189}
+                  players={0}
                   path="/games/minesweeper"
                 />
                 <GameCard
                   title="Tic Tac Toe"
                   description="Classic game of X's and O's with a competitive twist"
                   image="/placeholder.svg?height=200&width=400"
-                  players={421}
+                  players={0}
                   path="/games/tictactoe"
                 />
               </div>
             </TabsContent>
             <TabsContent value="active" className="space-y-4">
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Sudoku Challenge</CardTitle>
-                    <CardDescription>vs. Player123</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">Your Score</p>
-                        <p className="text-2xl font-bold">1250</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">Opponent</p>
-                        <p className="text-2xl font-bold">1180</p>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        12:45 remaining
-                      </span>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full">Resume Game</Button>
-                  </CardFooter>
-                </Card>
+              <div className="flex items-center justify-center h-40">
+                <span className="text-xl font-semibold text-gray-500">
+                  Coming Soon
+                </span>
               </div>
             </TabsContent>
             <TabsContent value="tournaments" className="space-y-4">
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Weekly Challenge</CardTitle>
-                    <CardDescription>Starts in 2 hours</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <p className="text-sm">
-                        Games: Sudoku, Minesweeper, Tic Tac Toe
-                      </p>
-                      <p className="text-sm">Prize Pool: 5000 points</p>
-                      <p className="text-sm">Participants: 64/128</p>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full">Register</Button>
-                  </CardFooter>
-                </Card>
+              <div className="flex items-center justify-center h-40">
+                <span className="text-xl font-semibold text-gray-500">
+                  Coming Soon
+                </span>
               </div>
             </TabsContent>
           </Tabs>

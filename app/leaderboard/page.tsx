@@ -37,7 +37,7 @@ export default function LeaderboardPage() {
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Games</span>
           </Link>
-          <div className="ml-auto flex items-center gap-4">
+          {/* <div className="ml-auto flex items-center gap-4">
             <Button variant="outline" size="sm">
               <Filter className="h-4 w-4 mr-2" />
               Filter
@@ -46,7 +46,7 @@ export default function LeaderboardPage() {
               <Trophy className="h-4 w-4 mr-2" />
               My Ranking
             </Button>
-          </div>
+          </div> */}
         </div>
       </header>
       <main className="flex-1 container py-6">
@@ -61,7 +61,7 @@ export default function LeaderboardPage() {
             </p>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          {/* <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -96,7 +96,7 @@ export default function LeaderboardPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          </div> */}
 
           <Tabs defaultValue="all" className="space-y-4">
             <TabsList>
